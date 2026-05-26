@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "netmesh DALI Gateway",
+        "description": "Enter the gateway IP address or it will be auto-discovered.",
+        "data": {
+          "host": "Gateway IP Address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to gateway. Check IP and power."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured."
+    }
+  }
+}
