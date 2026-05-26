@@ -1,0 +1,6 @@
+{
+  "name": "netmesh DALI",
+  "homeassistant": "2025.1.0",
+  "hacs": "1.32.0",
+  "render_readme": true
+}
