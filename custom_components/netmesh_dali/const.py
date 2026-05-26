@@ -1,0 +1,11 @@
+DOMAIN = "netmesh_dali"
+CONF_HOST = "host"
+DEFAULT_PORT = 80
+SCAN_INTERVAL = 30
+API_INFO = "/info"
+API_DEVICES = "/devices"
+API_DEVICE_CONTROL = "/device/{}/control"
+API_BROADCAST_CONTROL = "/broadcast/control"
+API_GROUP_CONTROL = "/group/{}/control"
+API_SCAN = "/dali/scan"
+API_ETHERNET = "/ethernet"
