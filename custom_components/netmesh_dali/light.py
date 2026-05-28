@@ -1,5 +1,6 @@
 """Light platform for netmesh DALI."""
 import logging
+import asyncio
 import aiohttp
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -15,9 +16,35 @@ async def async_setup_entry(hass, entry, async_add_entities):
     host = hass.data[DOMAIN][entry.entry_id]["host"]
     devices = await _fetch_devices(host)
     entities = []
+    known_ids = set()
     for device in devices:
         entities.append(NetmeshDaliLight(host, device, entry.entry_id))
+        known_ids.add(device["id"])
     async_add_entities(entities, update_before_add=False)
+
+    hass.data[DOMAIN][entry.entry_id]["known_ids"] = known_ids
+    hass.data[DOMAIN][entry.entry_id]["async_add_entities"] = async_add_entities
+
+    async def refresh_devices(now=None):
+        while True:
+            await asyncio.sleep(60)
+            try:
+                current_devices = await _fetch_devices(host)
+                current_ids = {d["id"] for d in current_devices}
+                new_ids = current_ids - hass.data[DOMAIN][entry.entry_id]["known_ids"]
+                if new_ids:
+                    new_entities = []
+                    for device in current_devices:
+                        if device["id"] in new_ids:
+                            new_entities.append(NetmeshDaliLight(host, device, entry.entry_id))
+                    if new_entities:
+                        hass.data[DOMAIN][entry.entry_id]["async_add_entities"](new_entities, update_before_add=False)
+                        hass.data[DOMAIN][entry.entry_id]["known_ids"].update(new_ids)
+                        _LOGGER.info("Added %d new DALI device(s)", len(new_entities))
+            except Exception as err:
+                _LOGGER.debug("Device refresh error: %s", err)
+
+    entry.async_create_background_task(hass, refresh_devices(), "netmesh_dali_refresh")
 
 async def _fetch_devices(host):
     try:
