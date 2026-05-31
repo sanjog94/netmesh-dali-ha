@@ -5,6 +5,7 @@ import aiohttp
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
+    ATTR_RGB_COLOR,
     ColorMode,
     LightEntity,
 )
@@ -70,11 +71,22 @@ class NetmeshDaliLight(LightEntity):
         features = device.get("features", {})
         self._has_brightness = "dimmable" in features
         self._has_cct = "colorKelvin" in features
-        if self._has_cct:
+        self._has_rgb = "colorRGB" in features
+        if self._has_cct and self._has_rgb:
+            self._attr_supported_color_modes = {ColorMode.COLOR_TEMP, ColorMode.RGB}
+            self._attr_color_mode = ColorMode.COLOR_TEMP
+            self._attr_min_color_temp_kelvin = 2700
+            self._attr_max_color_temp_kelvin = 6500
+            self._attr_rgb_color = (255, 255, 255)
+        elif self._has_cct:
             self._attr_supported_color_modes = {ColorMode.COLOR_TEMP}
             self._attr_color_mode = ColorMode.COLOR_TEMP
             self._attr_min_color_temp_kelvin = 2700
             self._attr_max_color_temp_kelvin = 6500
+        elif self._has_rgb:
+            self._attr_supported_color_modes = {ColorMode.RGB}
+            self._attr_color_mode = ColorMode.RGB
+            self._attr_rgb_color = (255, 255, 255)
         elif self._has_brightness:
             self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
             self._attr_color_mode = ColorMode.BRIGHTNESS
@@ -105,6 +117,12 @@ class NetmeshDaliLight(LightEntity):
             kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
             payload["colorKelvin"] = kelvin
             self._attr_color_temp_kelvin = kelvin
+            self._attr_color_mode = ColorMode.COLOR_TEMP
+        if ATTR_RGB_COLOR in kwargs:
+            r, g, b = kwargs[ATTR_RGB_COLOR]
+            payload["colorRGB"] = {"r": r / 255.0, "g": g / 255.0, "b": b / 255.0}
+            self._attr_rgb_color = (r, g, b)
+            self._attr_color_mode = ColorMode.RGB
         self._attr_is_on = True
         self.async_write_ha_state()
         await self._send_control(payload)
